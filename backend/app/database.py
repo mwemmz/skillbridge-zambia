@@ -1,18 +1,19 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-
-from .config import settings
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool
 
 from .config import settings
 
-if settings.database_url.startswith("sqlite+libsql"):
+# Accept both the raw Turso URL (libsql://) and the SQLAlchemy dialect URL
+# (sqlite+libsql://) so pasting either into DATABASE_URL works.
+database_url = settings.database_url
+if database_url.startswith("libsql://"):
+    database_url = "sqlite+" + database_url
+
+if database_url.startswith("sqlite+libsql"):
     try:
         engine = create_engine(
-            settings.database_url,
+            database_url,
             connect_args={"auth_token": settings.turso_auth_token},
             poolclass=NullPool,
             pool_pre_ping=True,
@@ -23,13 +24,13 @@ if settings.database_url.startswith("sqlite+libsql"):
             "installed. On Windows this is expected — sqlalchemy-libsql only ships "
             "Linux/macOS wheels. Install it on Render via requirements-render.txt."
         )
-elif settings.database_url.startswith("sqlite"):
+elif database_url.startswith("sqlite"):
     engine = create_engine(
-        settings.database_url,
+        database_url,
         connect_args={"check_same_thread": False},
     )
 else:
-    engine = create_engine(settings.database_url)
+    engine = create_engine(database_url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
