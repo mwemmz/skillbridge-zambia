@@ -20,6 +20,7 @@ def build_turso_url(db_url: str) -> str:
     db_name = parsed.netloc
     
     auth_token = settings.turso_auth_token
+    print(f"DEBUG: TURSO_AUTH_TOKEN length: {len(auth_token) if auth_token else 0}") # Temporary debug line
     if not auth_token:
         raise RuntimeError(
             "DATABASE_URL starts with 'libsql://' but TURSO_AUTH_TOKEN is not set. "
