@@ -4,6 +4,9 @@
 # Before deploying: rebuild the frontend so dist/ is up to date:
 #   cd frontend && npm run build
 # then commit and push (frontend/dist must be committed).
+#
+# Uses Render free Postgres for persistence (free tier has no persistent disks).
+# NOTE: free Postgres expires after ~30 days — fine for a semester demo.
 services:
   - type: web
     name: skillbridge-zambia
@@ -14,8 +17,10 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        value: sqlite:////data/skillbridge.db
-    disk:
-      name: skillbridge-data
-      mountPath: /data
-      sizeGB: 1
+        fromDatabase:
+          name: skillbridge-db
+          property: externalConnectionString
+
+databases:
+  - name: skillbridge-db
+    plan: free

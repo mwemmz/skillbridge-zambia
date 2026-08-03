@@ -58,6 +58,21 @@ Mwale, Brian Sakala) plus 6 skill categories.
 
 ---
 
+## Deploy to Render (free public link)
+
+1. Rebuild the frontend so the hosted app is up to date:
+   `cd frontend` → `npm run build` → commit & push (must include `frontend/dist`).
+2. Create a free account at **https://render.com** (sign in with GitHub).
+3. Dashboard → **New** → **Blueprint** → connect the `mwemmz/skillbridge-zambia`
+   repository. Render reads `render.yaml`, creates the web service **and** a free
+   Postgres database, then deploys.
+4. When the deploy finishes, open the service URL (`https://skillbridge-zambia.onrender.com`).
+
+Free-tier caveats: the service sleeps after 15 min idle (first visit takes ~30–60 s
+to wake up), and the free Postgres expires after ~30 days — fine for a semester demo.
+
+---
+
 ## How the demo works (10-step pitch scenario)
 
 1. Customer logs in → opens the **map**.
