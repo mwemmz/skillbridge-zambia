@@ -1,13 +1,15 @@
-# Render.com Blueprint — deploy SkillBridge Zambia as one service.
-# The FastAPI backend serves BOTH the API and the pre-built React app (frontend/dist).
+# Render.com Blueprint - one service for the whole app.
+# The FastAPI backend serves BOTH the API and the pre-built React app (frontend/dist),
+# so the entire product is a single web service on Render. No rootDir is used so any
+# commit (backend OR frontend) triggers a deploy of the one service.
 #
 # Before deploying: rebuild the frontend so dist/ is up to date:
 #   cd frontend && npm run build
 # then commit and push (frontend/dist must be committed).
 #
 # Database: Turso (libSQL, free ~9GB, no expiry). The DATABASE_URL and auth token
-# are secrets, so they're NOT committed here — set them in the Render dashboard:
-#   Service → skillbridge-zambia → Environment → add the two vars below:
+# are secrets, so they're NOT committed here - set them in the Render dashboard:
+#   Service -> skillbridge-zambia -> Environment -> add the two vars below:
 #     DATABASE_URL      = the `sqlite+libsql://...` URL from your Turso database
 #     TURSO_AUTH_TOKEN  = the token created on the Turso dashboard
 # (The blueprint creates both vars with `sync: false` so values stay manual.)
@@ -16,10 +18,11 @@ services:
     name: skillbridge-zambia
     runtime: python
     plan: free
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt -r requirements-render.txt
-    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r backend/requirements.txt -r backend/requirements-render.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.7
       - key: DATABASE_URL
         sync: false
       - key: TURSO_AUTH_TOKEN
