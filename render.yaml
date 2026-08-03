@@ -1,0 +1,21 @@
+# Render.com Blueprint — deploy SkillBridge Zambia as one service.
+# The FastAPI backend serves BOTH the API and the pre-built React app (frontend/dist).
+#
+# Before deploying: rebuild the frontend so dist/ is up to date:
+#   cd frontend && npm run build
+# then commit and push (frontend/dist must be committed).
+services:
+  - type: web
+    name: skillbridge-zambia
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/skillbridge.db
+    disk:
+      name: skillbridge-data
+      mountPath: /data
+      sizeGB: 1
