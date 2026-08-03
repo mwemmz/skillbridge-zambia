@@ -55,6 +55,8 @@ Mwale, Brian Sakala) plus 6 skill categories.
 > local SQLite file (`backend/skillbridge.db`) so it runs anywhere with zero setup.
 > To use PostgreSQL, create a `.env` file in `backend/`:
 > `DATABASE_URL=postgresql://user:pass@localhost:5432/skillbridge`
+> To use Turso, point `DATABASE_URL` at your `sqlite+libsql://` URL and set
+> `TURSO_AUTH_TOKEN` to the Turso auth token.
 
 ---
 
@@ -64,12 +66,18 @@ Mwale, Brian Sakala) plus 6 skill categories.
    `cd frontend` → `npm run build` → commit & push (must include `frontend/dist`).
 2. Create a free account at **https://render.com** (sign in with GitHub).
 3. Dashboard → **New** → **Blueprint** → connect the `mwemmz/skillbridge-zambia`
-   repository. Render reads `render.yaml`, creates the web service **and** a free
-   Postgres database, then deploys.
-4. When the deploy finishes, open the service URL (`https://skillbridge-zambia.onrender.com`).
+   repository. Render reads `render.yaml` and creates the web service.
+4. In the service → **Environment**, add two vars (values from your Turso dashboard):
+   - `DATABASE_URL` → `sqlite+libsql://<db-name>-<org>.turso.io?...`
+   - `TURSO_AUTH_TOKEN` → your Turso auth token
+5. Redeploy if needed, then open the service URL (`https://skillbridge-zambia.onrender.com`).
+
+Getting a free Turso database (no card): sign up at **https://turso.tech** →
+create a database, then run `turso db tokens create <db>` to generate an auth
+token, and `turso db show <db>` to see the URL.
 
 Free-tier caveats: the service sleeps after 15 min idle (first visit takes ~30–60 s
-to wake up), and the free Postgres expires after ~30 days — fine for a semester demo.
+to wake up). The Turso free database stays around (no 30-day expiry).
 
 ---
 

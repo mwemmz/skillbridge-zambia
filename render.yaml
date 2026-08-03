@@ -5,22 +5,22 @@
 #   cd frontend && npm run build
 # then commit and push (frontend/dist must be committed).
 #
-# Uses Render free Postgres for persistence (free tier has no persistent disks).
-# NOTE: free Postgres expires after ~30 days — fine for a semester demo.
+# Database: Turso (libSQL, free ~9GB, no expiry). The DATABASE_URL and auth token
+# are secrets, so they're NOT committed here — set them in the Render dashboard:
+#   Service → skillbridge-zambia → Environment → add the two vars below:
+#     DATABASE_URL      = the `sqlite+libsql://...` URL from your Turso database
+#     TURSO_AUTH_TOKEN  = the token created on the Turso dashboard
+# (The blueprint creates both vars with `sync: false` so values stay manual.)
 services:
   - type: web
     name: skillbridge-zambia
     runtime: python
     plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt -r requirements-render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: skillbridge-db
-          property: externalConnectionString
-
-databases:
-  - name: skillbridge-db
-    plan: free
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false

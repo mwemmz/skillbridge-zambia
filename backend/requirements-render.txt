@@ -1,0 +1,4 @@
+# Render-only extras. sqlalchemy-libsql (Turso) has no Windows wheels
+# (its libsql-experimental dep ships macOS/Linux only), so keep it out of
+# requirements.txt or local Windows setup would try to build it from source.
+sqlalchemy-libsql==0.2.0
