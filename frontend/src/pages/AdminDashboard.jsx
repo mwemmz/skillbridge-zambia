@@ -105,7 +105,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="mt-8 flex gap-2">
+      <div className="mt-8 flex gap-2 overflow-x-auto pb-1">
         {[
           ["workers", "Workers & verification"],
           ["requests", "Service requests"],
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition ${
               tab === k
                 ? "bg-brand-700 text-white"
                 : "border border-gray-200 bg-white text-gray-600 hover:border-brand-300"

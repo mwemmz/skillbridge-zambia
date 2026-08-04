@@ -294,12 +294,12 @@ export default function WorkerDashboard() {
                   </div>
                   <p className="mt-1 text-sm text-gray-600">{activeRequest.description}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   {activeRequest.status === "ACCEPTED" && (
                     <button
                       onClick={() => setStatus(activeRequest.id, "ON_THE_WAY")}
                       disabled={busy}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-violet-700 disabled:opacity-60"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-violet-700 disabled:opacity-60"
                     >
                       <IconTruck className="h-4 w-4" />
                       Start trip
@@ -310,7 +310,7 @@ export default function WorkerDashboard() {
                       {!simulating ? (
                         <button
                           onClick={startSimulation}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-800"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-800"
                         >
                           <IconPlay className="h-4 w-4" />
                           Simulate travel
@@ -318,7 +318,7 @@ export default function WorkerDashboard() {
                       ) : (
                         <button
                           onClick={stopSimulation}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-gray-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-gray-600"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-gray-600"
                         >
                           <IconPause className="h-4 w-4" />
                           Pause
@@ -327,7 +327,7 @@ export default function WorkerDashboard() {
                       <button
                         onClick={() => setStatus(activeRequest.id, "COMPLETED")}
                         disabled={busy}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-accent-600 disabled:opacity-60"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-accent-600 disabled:opacity-60"
                       >
                         <IconCheck className="h-4 w-4" />
                         Complete job
@@ -384,11 +384,11 @@ export default function WorkerDashboard() {
                   <p className="mt-3 text-sm text-gray-700">{r.description}</p>
 
                   {r.status === "REQUESTED" && (
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                       <button
                         onClick={() => setStatus(r.id, "ACCEPTED")}
                         disabled={busy}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-accent-600 disabled:opacity-60"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent-500 px-4 py-2 text-sm font-bold text-white transition hover:bg-accent-600 disabled:opacity-60"
                       >
                         <IconCheck className="h-4 w-4" />
                         Accept

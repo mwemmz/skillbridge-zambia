@@ -4,7 +4,7 @@ import api from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import MapView from "../components/MapView.jsx";
 import WorkerCard from "../components/WorkerCard.jsx";
-import { IconMapPin } from "../components/icons.jsx";
+import { IconMapPin, IconMenu, IconX } from "../components/icons.jsx";
 import { Avatar, StatusPill, SkillBadge } from "../components/ui.jsx";
 
 const DEFAULT_CENTER = [-15.3875, 28.3228]; // Lusaka, Zambia
@@ -32,7 +32,23 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeRequest, setActiveRequest] = useState(null);
   const [trackedPos, setTrackedPos] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
   const wsRef = useRef(null);
+
+  // Lock body scroll while the mobile worker panel is open
+  useEffect(() => {
+    document.body.style.overflow = panelOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [panelOpen]);
+
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e) => e.key === "Escape" && setPanelOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelOpen]);
 
   // 1. Resolve customer location (geolocation → fallback to Lusaka centre)
   useEffect(() => {
@@ -197,6 +213,74 @@ export default function CustomerDashboard() {
   const hasRequestFlow =
     activeRequest && ["REQUESTED", "ACCEPTED", "ON_THE_WAY"].includes(activeRequest.status);
 
+  const sidebarContent = (
+    <>
+      <div className="border-b border-gray-200 p-4">
+        <h1 className="text-lg font-extrabold text-brand-950">
+          Hello, {user?.name?.split(" ")[0]}
+        </h1>
+        <p className="text-xs text-gray-500">
+          Find a verified skilled worker near you
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSkill("")}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              skill === ""
+                ? "bg-brand-700 text-white"
+                : "border border-gray-200 text-gray-600 hover:border-brand-300"
+            }`}
+          >
+            All
+          </button>
+          {SKILLS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSkill(s)}
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                skill === s
+                  ? "bg-brand-700 text-white"
+                  : "border border-gray-200 text-gray-600 hover:border-brand-300"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() =>
+            navigator.geolocation.getCurrentPosition(
+              (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+              () => setUserLocation(DEFAULT_CENTER)
+            )
+          }
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline"
+        >
+          <IconMapPin className="h-4 w-4" />
+          Use my current location
+        </button>
+      </div>
+
+      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        {loading && workers.length === 0 ? (
+          <div className="py-10 text-center text-sm text-gray-400">
+            Finding nearby workers…
+          </div>
+        ) : workers.length === 0 ? (
+          <div className="py-10 text-center text-sm text-gray-400">
+            No {skill || ""} workers nearby right now.
+          </div>
+        ) : (
+          workers.map((w) => <WorkerCard key={w.id} worker={w} />)
+        )}
+      </div>
+
+      <div className="border-t border-gray-200 p-3 text-center text-[11px] text-gray-400">
+        Showing {workers.length} worker{workers.length === 1 ? "" : "s"} · nearest first
+      </div>
+    </>
+  );
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       {/* Tracking banner */}
@@ -237,71 +321,9 @@ export default function CustomerDashboard() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="flex w-[400px] shrink-0 flex-col border-r border-gray-200 bg-white">
-          <div className="border-b border-gray-200 p-4">
-            <h1 className="text-lg font-extrabold text-brand-950">
-              Hello, {user?.name?.split(" ")[0]}
-            </h1>
-            <p className="text-xs text-gray-500">
-              Find a verified skilled worker near you
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setSkill("")}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  skill === ""
-                    ? "bg-brand-700 text-white"
-                    : "border border-gray-200 text-gray-600 hover:border-brand-300"
-                }`}
-              >
-                All
-              </button>
-              {SKILLS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSkill(s)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    skill === s
-                      ? "bg-brand-700 text-white"
-                      : "border border-gray-200 text-gray-600 hover:border-brand-300"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() =>
-                navigator.geolocation.getCurrentPosition(
-                  (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-                  () => setUserLocation(DEFAULT_CENTER)
-                )
-              }
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline"
-            >
-              <IconMapPin className="h-4 w-4" />
-              Use my current location
-            </button>
-          </div>
-
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
-            {loading && workers.length === 0 ? (
-              <div className="py-10 text-center text-sm text-gray-400">
-                Finding nearby workers…
-              </div>
-            ) : workers.length === 0 ? (
-              <div className="py-10 text-center text-sm text-gray-400">
-                No {skill || ""} workers nearby right now.
-              </div>
-            ) : (
-              workers.map((w) => <WorkerCard key={w.id} worker={w} />)
-            )}
-          </div>
-
-          <div className="border-t border-gray-200 p-3 text-center text-[11px] text-gray-400">
-            Showing {workers.length} worker{workers.length === 1 ? "" : "s"} · nearest first
-          </div>
+        {/* Sidebar (desktop) */}
+        <aside className="hidden w-[400px] shrink-0 flex-col border-r border-gray-200 bg-white lg:flex">
+          {sidebarContent}
         </aside>
 
         {/* Map */}
@@ -312,8 +334,41 @@ export default function CustomerDashboard() {
             tracked={trackedWorker}
             onSelect={(w) => navigate(`/workers/${w.id}`)}
           />
+
+          {/* Mobile: floating toggle for the worker panel */}
+          <button
+            onClick={() => setPanelOpen(true)}
+            className="absolute left-3 top-3 z-20 inline-flex items-center gap-2 rounded-full bg-brand-950 px-4 py-2 text-sm font-bold text-white shadow-lg ring-1 ring-black/10 lg:hidden"
+          >
+            <IconMenu className="h-4 w-4" />
+            {workers.length} worker{workers.length === 1 ? "" : "s"}
+          </button>
         </div>
       </div>
+
+      {/* Mobile: slide-over panel */}
+      {panelOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setPanelOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-gray-200 bg-white shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3">
+              <span className="text-sm font-bold text-brand-950">Nearby workers</span>
+              <button
+                onClick={() => setPanelOpen(false)}
+                aria-label="Close panel"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100"
+              >
+                <IconX className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col">{sidebarContent}</div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
