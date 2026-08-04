@@ -9,25 +9,22 @@ from .config import settings
 def build_turso_url(db_url: str) -> str:
     """
     Accepts libsql:// URLs and converts them to the proper SQLAlchemy format.
-    
+
     Expected formats:
       Input:  libsql://skillbridge-mwemmz.aws-ap-northeast-1.turso.io
-      Output: sqlite+libsql://skillbridge-mwemmz.aws-ap-northeast-1.turso.io?authToken=<token>&secure=true
-    
-    The URL format must include the full hostname (including the .turso.io domain).
+      Output: sqlite+libsql://skillbridge-mwemmz.aws-ap-northeast-1.turso.io?secure=true
+
+    The auth token is passed via connect_args={"auth_token": ...} (see get_engine),
+    matching the documented sqlalchemy-libsql usage. The URL keeps ?secure=true so
+    the driver uses HTTPS (without it the server answers with a 301/308 redirect).
     """
     parsed = urlparse(db_url)
     db_name = parsed.netloc
-    
-    auth_token = settings.turso_auth_token
-    print(f"DEBUG: TURSO_AUTH_TOKEN length: {len(auth_token) if auth_token else 0}") # Temporary debug line
-    if not auth_token:
-        raise RuntimeError(
-            "DATABASE_URL starts with 'libsql://' but TURSO_AUTH_TOKEN is not set. "
-            "Provide the token in Render (or via .env locally) so the app can connect."
-        )
-    
-    return f"sqlite+libsql://{db_name}?authToken={auth_token}&secure=true"
+
+    if not db_name:
+        raise ValueError(f"Invalid libsql URL (missing hostname): {db_url}")
+
+    return f"sqlite+libsql://{db_name}?secure=true"
 
 
 def get_engine(database_url: str):
@@ -49,12 +46,19 @@ def get_engine(database_url: str):
                 f"Invalid database URL format: {database_url}. "
                 "Expected sqlite://... or libsql://..."
             )
-        
+
         database_url = build_turso_url(database_url)
-        
+
+        auth_token = settings.turso_auth_token
+        if not auth_token:
+            raise RuntimeError(
+                "DATABASE_URL starts with 'libsql://' but TURSO_AUTH_TOKEN is not set. "
+                "Provide the token in Render (or via .env locally) so the app can connect."
+            )
+
         engine = create_engine(
             database_url,
-            connect_args={},
+            connect_args={"auth_token": auth_token},
             poolclass=NullPool,
             pool_pre_ping=True,
         )
