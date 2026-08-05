@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import {
   IconBolt,
   IconGlobe,
   IconMapPin,
+  IconSearch,
   IconShield,
   IconSparkles,
   IconTruck,
@@ -33,6 +36,20 @@ const DEMO = [
 ];
 
 export default function Landing() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  function handleSearch(e) {
+    e.preventDefault();
+    const q = query.trim();
+    if (user) {
+      navigate(`/customer?view=list${q ? `&q=${encodeURIComponent(q)}` : ""}`);
+    } else {
+      navigate(`/login${q ? `?next=/customer?view=list&q=${encodeURIComponent(q)}` : ""}`);
+    }
+  }
+
   return (
     <div className="bg-white">
       {/* Hero */}
@@ -69,6 +86,29 @@ export default function Landing() {
             welders and more — with live location tracking, just like a ride-hailing app,
             but for skilled labour.
           </p>
+
+          <form
+            onSubmit={handleSearch}
+            className="mx-auto mt-8 flex max-w-xl items-stretch gap-2"
+          >
+            <div className="relative flex-1">
+              <IconSearch className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search a service… e.g. plumber, welder, solar"
+                className="h-full w-full rounded-xl border border-white/10 bg-white py-3.5 pl-12 pr-4 text-sm text-gray-900 shadow-lg outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-accent-400"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-xl bg-accent-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-accent-500/30 transition hover:bg-accent-600"
+            >
+              Search
+            </button>
+          </form>
+
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
               to="/register"

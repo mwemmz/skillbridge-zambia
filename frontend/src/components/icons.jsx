@@ -27,6 +27,12 @@ export const IconMenu = (p) => (
   </Icon>
 );
 
+export const IconSearch = (p) => (
+  <Icon {...p}>
+    <path d="m21 21-4.35-4.35M17.4 10.65a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z" />
+  </Icon>
+);
+
 export const IconX = (p) => (
   <Icon {...p}>
     <path d="M6 6l12 12M18 6 6 18" />

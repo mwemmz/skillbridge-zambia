@@ -4,7 +4,7 @@ import api from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import MapView from "../components/MapView.jsx";
 import WorkerCard from "../components/WorkerCard.jsx";
-import { IconMapPin, IconMenu } from "../components/icons.jsx";
+import { IconMapPin, IconMenu, IconSearch, IconX } from "../components/icons.jsx";
 import { Avatar, StatusPill, SkillBadge } from "../components/ui.jsx";
 
 const DEFAULT_CENTER = [-15.3875, 28.3228]; // Lusaka, Zambia
@@ -29,6 +29,7 @@ export default function CustomerDashboard() {
 
   const [userLocation, setUserLocation] = useState(null);
   const [skill, setSkill] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") || "");
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeRequest, setActiveRequest] = useState(null);
@@ -37,6 +38,17 @@ export default function CustomerDashboard() {
     searchParams.get("view") === "list" ? "list" : "map"
   );
   const wsRef = useRef(null);
+
+  // Client-side search across service (skill) and worker name
+  const filteredWorkers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return workers;
+    return workers.filter(
+      (w) =>
+        (w.skill || "").toLowerCase().includes(q) ||
+        (w.name || "").toLowerCase().includes(q)
+    );
+  }, [workers, search]);
 
   // 1. Resolve customer location (geolocation → fallback to Lusaka centre)
   useEffect(() => {
@@ -210,6 +222,25 @@ export default function CustomerDashboard() {
         <p className="text-xs text-gray-500">
           Find a verified skilled worker near you
         </p>
+        <div className="relative mt-3">
+          <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search services or workers…"
+            className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-9 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+            >
+              <IconX className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           <button
             onClick={() => setSkill("")}
@@ -254,17 +285,20 @@ export default function CustomerDashboard() {
           <div className="py-10 text-center text-sm text-gray-400">
             Finding nearby workers…
           </div>
-        ) : workers.length === 0 ? (
+        ) : filteredWorkers.length === 0 ? (
           <div className="py-10 text-center text-sm text-gray-400">
-            No {skill || ""} workers nearby right now.
+            {search.trim()
+              ? `No services or workers match "${search.trim()}".`
+              : `No ${skill || ""} workers nearby right now.`}
           </div>
         ) : (
-          workers.map((w) => <WorkerCard key={w.id} worker={w} />)
+          filteredWorkers.map((w) => <WorkerCard key={w.id} worker={w} />)
         )}
       </div>
 
       <div className="border-t border-gray-200 p-3 text-center text-[11px] text-gray-400">
-        Showing {workers.length} worker{workers.length === 1 ? "" : "s"} · nearest first
+        Showing {filteredWorkers.length} worker
+        {filteredWorkers.length === 1 ? "" : "s"} · nearest first
       </div>
     </>
   );
@@ -317,7 +351,7 @@ export default function CustomerDashboard() {
         {/* Mobile: map view (full screen) */}
         <div className={`relative flex-1 lg:block ${view === "map" ? "block" : "hidden"}`}>
           <MapView
-            workers={workers}
+            workers={filteredWorkers}
             center={userLocation}
             tracked={trackedWorker}
             onSelect={(w) => navigate(`/workers/${w.id}`)}
@@ -361,7 +395,7 @@ export default function CustomerDashboard() {
                 view === "list" ? "bg-white/20" : "bg-brand-800 text-brand-200"
               }`}
             >
-              {workers.length}
+              {filteredWorkers.length}
             </span>
           </button>
         </div>

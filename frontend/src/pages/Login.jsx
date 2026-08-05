@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { serverError } from "../api.js";
 
@@ -12,6 +12,8 @@ const QUICK_LOGIN = [
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = searchParams.get("next");
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,7 +24,15 @@ export default function Login() {
     setBusy(true);
     try {
       const user = await login(form.email, form.password);
-      navigate(user.role === "worker" ? "/worker" : user.role === "admin" ? "/admin" : "/customer");
+      const target =
+        next && next.startsWith("/")
+          ? next
+          : user.role === "worker"
+            ? "/worker"
+            : user.role === "admin"
+              ? "/admin"
+              : "/customer";
+      navigate(target);
     } catch (err) {
       setError(serverError(err, "Login failed. Check your credentials."));
     } finally {
