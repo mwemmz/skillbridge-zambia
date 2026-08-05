@@ -1,9 +1,43 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { IconMenu, IconX } from "./icons.jsx";
+import {
+  IconMenu,
+  IconX,
+  IconMapPin,
+  IconWrench,
+  IconShield,
+  IconSparkles,
+} from "./icons.jsx";
 
 const ROLE_LABELS = { customer: "Customer", worker: "Worker", admin: "Admin" };
+
+const MENU_BY_ROLE = {
+  customer: [
+    {
+      label: "Book a service",
+      sub: "Find verified skilled workers near you",
+      to: "/customer",
+      Icon: IconMapPin,
+    },
+  ],
+  worker: [
+    {
+      label: "My service requests",
+      sub: "Accept jobs and manage your trips",
+      to: "/worker",
+      Icon: IconWrench,
+    },
+  ],
+  admin: [
+    {
+      label: "Admin dashboard",
+      sub: "Verification, skill categories & requests",
+      to: "/admin",
+      Icon: IconShield,
+    },
+  ],
+};
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -15,11 +49,20 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   function handleLogout() {
     setMenuOpen(false);
     logout();
     navigate("/");
   }
+
+  const items = user ? [...(MENU_BY_ROLE[user.role] || []), { label: "Home", sub: "Back to the landing page", to: "/", Icon: IconSparkles }] : [];
 
   return (
     <header className="sticky top-0 z-50 border-b border-brand-800 bg-brand-950 text-white">
@@ -56,7 +99,7 @@ export default function Navbar() {
               </button>
               <button
                 onClick={() => setMenuOpen((o) => !o)}
-                aria-label="Menu"
+                aria-label="Open menu"
                 aria-expanded={menuOpen}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-brand-700 transition hover:bg-brand-800 md:hidden"
               >
@@ -82,30 +125,89 @@ export default function Navbar() {
         </div>
       </div>
 
-      {user && menuOpen && (
-        <div className="border-t border-brand-800 bg-brand-950 px-4 py-4 md:hidden">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-800 text-lg font-bold text-accent-400">
-              {user.name
-                ?.split(" ")
-                .map((p) => p[0])
-                .slice(0, 2)
-                .join("")
-                .toUpperCase()}
+      {/* Mobile drawer */}
+      {user && (
+        <div className={`fixed inset-0 z-40 md:hidden ${menuOpen ? "" : "pointer-events-none"}`}>
+          <div
+            className={`absolute inset-0 bg-black/40 transition-opacity duration-200 ${
+              menuOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <aside
+            className={`absolute inset-y-0 right-0 flex w-[82vw] max-w-xs flex-col bg-white text-brand-950 shadow-2xl transition-transform duration-200 ${
+              menuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div className="text-sm font-extrabold uppercase tracking-wide text-gray-400">
+                Menu
+              </div>
+              <button
+                onClick={() => setMenuOpen(false)}
+                aria-label="Close menu"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100"
+              >
+                <IconX className="h-5 w-5" />
+              </button>
             </div>
-            <div className="min-w-0">
-              <div className="truncate font-bold">{user.name}</div>
-              <div className="text-xs uppercase tracking-wide text-brand-300">
-                {ROLE_LABELS[user.role] || user.role}
+
+            <div className="border-b border-gray-100 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-900 text-lg font-bold text-white">
+                  {user.name
+                    ?.split(" ")
+                    .map((p) => p[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate font-bold">{user.name}</div>
+                  <span className="mt-0.5 inline-block rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-800">
+                    {ROLE_LABELS[user.role] || user.role}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="mt-4 w-full rounded-lg border border-brand-700 py-2.5 text-sm font-semibold text-brand-100 transition hover:bg-brand-800"
-          >
-            Sign out
-          </button>
+
+            <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
+              {items.map(({ label, sub, to, Icon }) => {
+                const active = location.pathname === to;
+                return (
+                  <Link
+                    key={label}
+                    to={to}
+                    className={`flex items-start gap-3 rounded-xl px-3 py-3 transition ${
+                      active ? "bg-brand-50 ring-1 ring-brand-100" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        active ? "bg-brand-700 text-white" : "bg-gray-100 text-brand-700"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-gray-900">{label}</span>
+                      <span className="block text-xs text-gray-500">{sub}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="border-t border-gray-100 p-3">
+              <button
+                onClick={handleLogout}
+                className="w-full rounded-xl border border-gray-300 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50"
+              >
+                Sign out
+              </button>
+            </div>
+          </aside>
         </div>
       )}
     </header>
