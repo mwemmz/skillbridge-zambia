@@ -115,12 +115,13 @@ export default function MapView({ workers = [], center, tracked, onSelect, zoom 
   );
 
   return (
-    <MapContainer
-      center={mapCenter}
-      zoom={zoom}
-      scrollWheelZoom
-      style={{ height: "100%", width: "100%" }}
-    >
+    <div className="z-0 isolate h-full w-full">
+      <MapContainer
+        center={mapCenter}
+        zoom={zoom}
+        scrollWheelZoom
+        style={{ height: "100%", width: "100%" }}
+      >
       <RecenterOnChange center={mapCenter} />
       <TileLayer
         attribution='&copy; <a href="https://www.esri.com">Esri</a> &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
@@ -201,6 +202,7 @@ export default function MapView({ workers = [], center, tracked, onSelect, zoom 
           </Popup>
         </Marker>
       )}
-    </MapContainer>
+      </MapContainer>
+    </div>
   );
 }
