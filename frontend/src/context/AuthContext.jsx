@@ -13,17 +13,31 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
+    // Restore the cached profile immediately so the UI never flips to
+    // "logged out" while the backend is cold-starting (Render free tier).
+    const cached = sessionStorage.getItem("sb_user");
+    if (cached) {
+      try {
+        setUser(JSON.parse(cached));
+      } catch {
+        /* ignore malformed cache */
+      }
+    }
     api
       .get("/api/auth/me")
       .then((res) => {
         setUser(res.data);
         sessionStorage.setItem("sb_user", JSON.stringify(res.data));
       })
-      .catch(() => {
-        setUser(null);
-        setToken(null);
-        sessionStorage.removeItem("sb_token");
-        sessionStorage.removeItem("sb_user");
+      .catch((err) => {
+        // Only a real 401 means the session is dead. Network/5xx errors
+        // (e.g. Render cold start) should NOT log the user out.
+        if (err.response?.status === 401) {
+          setUser(null);
+          setToken(null);
+          sessionStorage.removeItem("sb_token");
+          sessionStorage.removeItem("sb_user");
+        }
       })
       .finally(() => setLoading(false));
   }, [token]);

@@ -110,18 +110,40 @@ export default function Landing() {
           </form>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/register"
-              className="rounded-xl bg-accent-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-accent-500/30 transition hover:-translate-y-0.5 hover:bg-accent-600"
-            >
-              Find a skilled worker
-            </Link>
-            <Link
-              to="/login"
-              className="rounded-xl border border-brand-500 px-8 py-3.5 text-base font-semibold text-brand-100 transition hover:bg-brand-800"
-            >
-              Log in
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  to={
+                    user.role === "customer"
+                      ? "/customer?view=list"
+                      : user.role === "admin"
+                        ? "/admin"
+                        : "/worker"
+                  }
+                  className="rounded-xl bg-accent-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-accent-500/30 transition hover:-translate-y-0.5 hover:bg-accent-600"
+                >
+                  {user.role === "customer" ? "Book a service" : "Go to my dashboard"}
+                </Link>
+                <span className="rounded-xl border border-brand-500 px-8 py-3.5 text-base font-semibold text-brand-100">
+                  Welcome back, {user.name?.split(" ")[0]}!
+                </span>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="rounded-xl bg-accent-500 px-8 py-3.5 text-base font-bold text-white shadow-lg shadow-accent-500/30 transition hover:-translate-y-0.5 hover:bg-accent-600"
+                >
+                  Find a skilled worker
+                </Link>
+                <Link
+                  to="/login"
+                  className="rounded-xl border border-brand-500 px-8 py-3.5 text-base font-semibold text-brand-100 transition hover:bg-brand-800"
+                >
+                  Log in
+                </Link>
+              </>
+            )}
           </div>
           <div className="mt-10 flex flex-wrap justify-center gap-2">
             {SKILLS.map((s) => (
