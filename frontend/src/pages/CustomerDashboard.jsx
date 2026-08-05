@@ -4,7 +4,7 @@ import api from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import MapView from "../components/MapView.jsx";
 import WorkerCard from "../components/WorkerCard.jsx";
-import { IconMapPin, IconMenu, IconX } from "../components/icons.jsx";
+import { IconMapPin, IconMenu } from "../components/icons.jsx";
 import { Avatar, StatusPill, SkillBadge } from "../components/ui.jsx";
 
 const DEFAULT_CENTER = [-15.3875, 28.3228]; // Lusaka, Zambia
@@ -32,23 +32,8 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeRequest, setActiveRequest] = useState(null);
   const [trackedPos, setTrackedPos] = useState(null);
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [view, setView] = useState("map");
   const wsRef = useRef(null);
-
-  // Lock body scroll while the mobile worker panel is open
-  useEffect(() => {
-    document.body.style.overflow = panelOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [panelOpen]);
-
-  useEffect(() => {
-    if (!panelOpen) return;
-    const onKey = (e) => e.key === "Escape" && setPanelOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [panelOpen]);
 
   // 1. Resolve customer location (geolocation → fallback to Lusaka centre)
   useEffect(() => {
@@ -282,7 +267,7 @@ export default function CustomerDashboard() {
   );
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    <div className="relative flex h-[calc(100vh-4rem)] flex-col">
       {/* Tracking banner */}
       {hasRequestFlow && activeRequest && (
         <div className="border-b border-brand-800 bg-brand-950 px-4 py-3 text-white">
@@ -321,54 +306,63 @@ export default function CustomerDashboard() {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar (desktop) */}
+        {/* Sidebar (desktop only) */}
         <aside className="hidden w-[400px] shrink-0 flex-col border-r border-gray-200 bg-white lg:flex">
           {sidebarContent}
         </aside>
 
-        {/* Map */}
-        <div className="relative flex-1">
+        {/* Mobile: map view (full screen) */}
+        <div className={`relative flex-1 lg:block ${view === "map" ? "block" : "hidden"}`}>
           <MapView
             workers={workers}
             center={userLocation}
             tracked={trackedWorker}
             onSelect={(w) => navigate(`/workers/${w.id}`)}
           />
+        </div>
 
-          {/* Mobile: floating toggle for the worker panel */}
-          <button
-            onClick={() => setPanelOpen(true)}
-            className="absolute left-3 top-3 z-20 inline-flex items-center gap-2 rounded-full bg-brand-950 px-4 py-2 text-sm font-bold text-white shadow-lg ring-1 ring-black/10 lg:hidden"
-          >
-            <IconMenu className="h-4 w-4" />
-            {workers.length} worker{workers.length === 1 ? "" : "s"}
-          </button>
+        {/* Mobile: list view (full screen) */}
+        <div
+          className={`flex-1 flex-col bg-white lg:hidden ${
+            view === "list" ? "flex" : "hidden"
+          }`}
+        >
+          {sidebarContent}
         </div>
       </div>
 
-      {/* Mobile: slide-over panel */}
-      {panelOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setPanelOpen(false)}
-            aria-hidden="true"
-          />
-          <aside className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col border-r border-gray-200 bg-white shadow-2xl">
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3">
-              <span className="text-sm font-bold text-brand-950">Nearby workers</span>
-              <button
-                onClick={() => setPanelOpen(false)}
-                aria-label="Close panel"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100"
-              >
-                <IconX className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col">{sidebarContent}</div>
-          </aside>
+      {/* Mobile: floating Map / List switcher */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center pb-4 lg:hidden">
+        <div className="pointer-events-auto flex overflow-hidden rounded-full bg-brand-950/95 text-white shadow-xl ring-1 ring-black/10">
+          <button
+            onClick={() => setView("map")}
+            aria-pressed={view === "map"}
+            className={`inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold transition ${
+              view === "map" ? "bg-accent-500 text-white" : "text-brand-200 hover:bg-brand-900"
+            }`}
+          >
+            <IconMapPin className="h-4 w-4" />
+            Map
+          </button>
+          <button
+            onClick={() => setView("list")}
+            aria-pressed={view === "list"}
+            className={`inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold transition ${
+              view === "list" ? "bg-accent-500 text-white" : "text-brand-200 hover:bg-brand-900"
+            }`}
+          >
+            <IconMenu className="h-4 w-4" />
+            List
+            <span
+              className={`rounded-full px-1.5 text-xs ${
+                view === "list" ? "bg-white/20" : "bg-brand-800 text-brand-200"
+              }`}
+            >
+              {workers.length}
+            </span>
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
