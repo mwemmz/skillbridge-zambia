@@ -17,7 +17,7 @@ const MENU_BY_ROLE = {
     {
       label: "Book a service",
       sub: "Find verified skilled workers near you",
-      to: "/customer",
+      to: "/customer?view=list",
       Icon: IconMapPin,
     },
   ],

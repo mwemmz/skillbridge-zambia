@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import MapView from "../components/MapView.jsx";
@@ -25,6 +25,7 @@ function haversine(lat1, lng1, lat2, lng2) {
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [userLocation, setUserLocation] = useState(null);
   const [skill, setSkill] = useState("");
@@ -32,7 +33,9 @@ export default function CustomerDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeRequest, setActiveRequest] = useState(null);
   const [trackedPos, setTrackedPos] = useState(null);
-  const [view, setView] = useState("map");
+  const [view, setView] = useState(() =>
+    searchParams.get("view") === "list" ? "list" : "map"
+  );
   const wsRef = useRef(null);
 
   // 1. Resolve customer location (geolocation → fallback to Lusaka centre)

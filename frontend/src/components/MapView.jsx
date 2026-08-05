@@ -146,43 +146,46 @@ export default function MapView({ workers = [], center, tracked, onSelect, zoom 
           key={w.id}
           position={[w.latitude, w.longitude]}
           icon={workerIcon(w, false)}
+          eventHandlers={onSelect ? { click: () => onSelect(w) } : undefined}
         >
-          <Popup>
-            <div className="min-w-[180px]">
-              <div className="font-bold text-gray-900">{w.name}</div>
-              <div className="mb-1 mt-1 flex items-center gap-1.5">
-                <SkillBadge skill={w.skill} />
-                <Stars rating={w.rating} />
-              </div>
-              <div className="text-xs text-gray-500">
-                {w.distance_km != null ? `${w.distance_km} km away · ` : ""}
-                {w.availability ? (
-                  <span className="font-semibold text-emerald-600">Online</span>
-                ) : (
-                  <span className="text-gray-400">Offline</span>
+          {!onSelect && (
+            <Popup>
+              <div className="min-w-[180px]">
+                <div className="font-bold text-gray-900">{w.name}</div>
+                <div className="mb-1 mt-1 flex items-center gap-1.5">
+                  <SkillBadge skill={w.skill} />
+                  <Stars rating={w.rating} />
+                </div>
+                <div className="text-xs text-gray-500">
+                  {w.distance_km != null ? `${w.distance_km} km away · ` : ""}
+                  {w.availability ? (
+                    <span className="font-semibold text-emerald-600">Online</span>
+                  ) : (
+                    <span className="text-gray-400">Offline</span>
+                  )}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {POPUP_BADGES.filter((b) => w[b.key]).map((b) => (
+                    <span
+                      key={b.key}
+                      className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700"
+                    >
+                      <IconCheck className="h-3 w-3" />
+                      {b.label}
+                    </span>
+                  ))}
+                </div>
+                {onSelect && (
+                  <button
+                    onClick={() => onSelect(w)}
+                    className="mt-2 w-full rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-800"
+                  >
+                    View profile
+                  </button>
                 )}
               </div>
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {POPUP_BADGES.filter((b) => w[b.key]).map((b) => (
-                  <span
-                    key={b.key}
-                    className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700"
-                  >
-                    <IconCheck className="h-3 w-3" />
-                    {b.label}
-                  </span>
-                ))}
-              </div>
-              {onSelect && (
-                <button
-                  onClick={() => onSelect(w)}
-                  className="mt-2 w-full rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-800"
-                >
-                  View profile
-                </button>
-              )}
-            </div>
-          </Popup>
+            </Popup>
+          )}
         </Marker>
       ))}
 
