@@ -33,6 +33,7 @@ def worker_to_dict(
         "rating": worker.rating,
         "experience_years": worker.experience_years,
         "availability": worker.availability,
+        "is_verified": bool(worker.is_verified),
         "phone": worker.user.phone if include_phone else None,
         "identity_verified": bool(verification and verification.identity_verified),
         "certificate_verified": bool(verification and verification.certificate_verified),

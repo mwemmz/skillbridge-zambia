@@ -7,12 +7,14 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .database import Base, SessionLocal, engine
-from .routers import admin, auth, requests, workers, ws
+from .migrations import run_migrations
+from .routers import admin, auth, crews, geo, matching, passport, requests, workers, ws
 from .seed import seed_demo_data
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 Base.metadata.create_all(bind=engine)
+run_migrations(engine)
 
 app = FastAPI(
     title="SkillBridge Zambia API",
@@ -31,6 +33,10 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 app.include_router(workers.router, prefix="/api")
 app.include_router(requests.router, prefix="/api")
+app.include_router(passport.router, prefix="/api")
+app.include_router(crews.router, prefix="/api")
+app.include_router(matching.router, prefix="/api")
+app.include_router(geo.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(ws.router)
 

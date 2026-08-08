@@ -1,8 +1,20 @@
+from datetime import date, datetime, timedelta
 from time import perf_counter
 
 from sqlalchemy.orm import Session
 
-from .models import Skill, User, Verification, Worker
+from .domain import recompute_worker_rating, refresh_area_stats, sync_worker_verified
+from .models import (
+    Crew,
+    CrewMember,
+    JobConfirmation,
+    ServiceRequest,
+    Skill,
+    User,
+    Verification,
+    Worker,
+    WorkerCertification,
+)
 from .security import hash_password
 
 WORKER_PASSWORD = "demo123"
@@ -112,6 +124,24 @@ DEMO_WORKERS = [
     },
 ]
 
+# (worker_index, customer_rating, description, days_ago)
+DEMO_JOB_HISTORY = [
+    (0, 5, "Replaced faulty wiring and sockets in a flat in Kabulonga", 12),
+    (0, 4, "Installed a distribution board in a shop in Cairo Road", 35),
+    (1, 5, "Repaired a burst pipe and replaced bathroom fittings", 9),
+    (1, 4, "Unblocked drainage at a guest house in Riverside", 40),
+    (2, 5, "Fabricated a steel gate and burglar bars in Woodlands", 15),
+    (3, 5, "Fixed brakes and did a service on a delivery van", 7),
+]
+
+DEMO_CERTIFICATIONS = [
+    (0, "Zambia Electrical Contractors Licence", "ERB Zambia", date(2019, 3, 1), "VERIFIED"),
+    (0, "Advanced Solar PV Installation", "REA Zambia", date(2022, 6, 15), "VERIFIED"),
+    (0, "TEVETA Trade Test Grade 1 - Electrical", "TEVETA", date(2018, 9, 1), "VERIFIED"),
+    (1, "Plumbing & Drainage Certificate", "TEVETA", date(2017, 5, 1), "VERIFIED"),
+    (5, "Solar PV Technician Certification", "REA Zambia", None, "PENDING"),
+]
+
 
 def seed_demo_data(db: Session):
     if db.query(User).filter(User.email == "admin@skillbridge.com").first():
@@ -147,6 +177,7 @@ def seed_demo_data(db: Session):
     )
     db.add(customer)
 
+    worker_objs = []
     for idx, w in enumerate(DEMO_WORKERS, start=1):
         user = User(
             name=w["name"],
@@ -170,16 +201,93 @@ def seed_demo_data(db: Session):
         )
         db.add(worker)
         db.flush()
+        worker_objs.append(worker)
 
+        verification = Verification(
+            worker_id=worker.id,
+            identity_verified=w["identity"],
+            certificate_verified=w["certificate"],
+            compliance_verified=w["compliance"],
+        )
+        db.add(verification)
+        worker.verification = verification
+        sync_worker_verified(worker)
+
+    # Certifications for the worker passports.
+    for idx, name, issuer, issue_date, status in DEMO_CERTIFICATIONS:
         db.add(
-            Verification(
-                worker_id=worker.id,
-                identity_verified=w["identity"],
-                certificate_verified=w["certificate"],
-                compliance_verified=w["compliance"],
+            WorkerCertification(
+                worker_id=worker_objs[idx].id,
+                name=name,
+                issuer=issuer,
+                issue_date=issue_date,
+                status=status,
             )
         )
 
+    # Confirmed work history (customer + co-worker confirmed) for derived ratings.
+    for w_idx, rating, description, days_ago in DEMO_JOB_HISTORY:
+        worker = worker_objs[w_idx]
+        req = ServiceRequest(
+            customer_id=customer.id,
+            worker_id=worker.id,
+            description=description,
+            latitude=worker.latitude,
+            longitude=worker.longitude,
+            status="COMPLETED",
+            job_type="maintenance",
+            scheduled_for=datetime.utcnow() - timedelta(days=days_ago + 7),
+            price=250.0,
+            rating=rating,
+            customer_confirmed=True,
+            confirmed_at=datetime.utcnow() - timedelta(days=days_ago),
+        )
+        db.add(req)
+        db.flush()
+        db.add(
+            JobConfirmation(
+                request_id=req.id,
+                confirmer_id=customer.id,
+                role="customer",
+                rating=rating,
+                note="Job completed to satisfaction",
+            )
+        )
+        peer = worker_objs[(w_idx + 1) % len(worker_objs)]
+        db.add(
+            JobConfirmation(
+                request_id=req.id,
+                confirmer_id=peer.user_id,
+                role="co_worker",
+                note="Peer confirmed work done on site",
+            )
+        )
+        recompute_worker_rating(db, worker)
+
+    # Demo crews.
+    crew1 = Crew(
+        name="Tembo Electrical & Solar",
+        skill_id=skill_objs["Electrician"].id,
+        description="Full home electrical and solar installation team.",
+        created_by=worker_objs[0].user_id,
+    )
+    db.add(crew1)
+    db.flush()
+    for wid, role in [(0, "lead"), (5, "member"), (6, "member")]:
+        db.add(CrewMember(crew_id=crew1.id, worker_id=worker_objs[wid].id, role=role))
+
+    crew2 = Crew(
+        name="Phiri Metal & Build",
+        skill_id=skill_objs["Welder"].id,
+        description="Welding and carpentry team for gates, roofs and fittings.",
+        created_by=worker_objs[2].user_id,
+    )
+    db.add(crew2)
+    db.flush()
+    for wid, role in [(2, "lead"), (4, "member")]:
+        db.add(CrewMember(crew_id=crew2.id, worker_id=worker_objs[wid].id, role=role))
+
+    refresh_area_stats(db)
     db.commit()
     print(
         f"[skillbridge] Demo data seeded in {perf_counter() - start:.1f}s - "
